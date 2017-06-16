@@ -18,8 +18,43 @@ int die(const std::string& message) {
   return -1;
 }
 
+void parseLine(unsigned long* time, uint8_t* buf, size_t* size, const std::string& line) {
+  char timeStr[17];
+  timeStr[16] = 0;
+  memcpy(timeStr, line.data(), 16);
+  *time = strtoul(timeStr, 0, 10);
+  auto hSize = line.size() - 17;
+  *size = hSize / 2;
+  auto h = line.data() + 17;
+  auto hEnd = h + hSize;
+  auto b = buf;
+  for (; h < hEnd; h += 2) {
+    unsigned int n;
+    sscanf(h, "%02x", &n);
+    *b = n;
+    ++b;
+  }
+}
+
 int play(const std::string& filename) {
   std::cerr << "Playing " << filename << std::endl;
+
+  std::ifstream is;
+  is.open(filename);
+
+  if (!is.is_open()) return die("Error opening file");
+
+  std::string line;
+
+  while (std::getline(is, line)) {
+    unsigned long time;
+    uint8_t buf[BUFSIZE];
+    memset(buf, 0, sizeof(buf));
+    size_t size;
+    parseLine(&time, buf, &size, line);
+    std::cerr << time << " " << size << " " << buf << "\n";
+  }
+
   return 0;
 }
 
