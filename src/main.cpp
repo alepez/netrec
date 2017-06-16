@@ -52,7 +52,8 @@ int play(const std::string& filename) {
     memset(buf, 0, sizeof(buf));
     size_t size;
     parseLine(&time, buf, &size, line);
-    std::cerr << time << " " << size << " " << buf << "\n";
+    usleep(1000 * time);
+    std::cerr << buf;
   }
 
   return 0;
