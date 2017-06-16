@@ -46,14 +46,18 @@ int play(const std::string& filename) {
 
   std::string line;
 
+  unsigned long lastTime = 0;
+
   while (std::getline(is, line)) {
     unsigned long time;
     uint8_t buf[BUFSIZE];
     memset(buf, 0, sizeof(buf));
     size_t size;
     parseLine(&time, buf, &size, line);
-    usleep(1000 * time);
-    std::cerr << buf;
+    auto delay = time - lastTime;
+    lastTime = time;
+    usleep(1000 * delay);
+    std::cout << buf;
   }
 
   return 0;
