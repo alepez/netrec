@@ -22,24 +22,20 @@ int play(const std::string& filename) {
   return 0;
 }
 
-std::string toHex(const uint8_t* buf, const size_t size) {
-  char* str = new char[size * 2 + 1];
-  const uint8_t* b = buf;
-  char* s = str;
-  for (size_t i = 0; i != size; ++i) {
-    sprintf(s, "%02x", *b);
-    b += 1;
-    s += 2;
+void printHex(std::ostream& os, const uint8_t* data, const size_t size) {
+  char buf[3];
+  auto dataEnd = data + size;
+
+  for (auto b = data; b != dataEnd; ++b) {
+    sprintf(buf, "%02x", *b);
+    os << buf;
   }
-  std::string result{str};
-  delete[] str;
-  return result;
 }
 
-std::string formatTime(unsigned long t) {
-  char str[1024];
+void printTime(std::ostream& os, unsigned long t) {
+  char str[17];
   sprintf(str, "%016lu", t);
-  return std::string{str};
+  os << str;
 }
 
 int rec(const std::string& filename, const std::string& hostname, const int port) {
@@ -76,7 +72,11 @@ int rec(const std::string& filename, const std::string& hostname, const int port
     auto now = std::chrono::steady_clock::now();
 
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count();
-    std::cerr << formatTime(elapsed) << " " << toHex(buf, n) << std::endl;
+
+    printTime(std::cout, elapsed);
+    std::cout << " ";
+    printHex(std::cout, buf, n);
+    std::cout << std::endl;
   }
 
   close(sockfd);
