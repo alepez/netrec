@@ -1,21 +1,17 @@
 #include <chrono>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <netdb.h>
-#include <netinet/in.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <string>
 #include <sys/socket.h>
-#include <sys/types.h>
 #include <unistd.h>
 
 #define BUFSIZE 1024
 
-int die(const std::string& message) {
+void die(const std::string& message) {
   std::cout << message << std::endl;
-  return -1;
+  exit(-1);
 }
 
 void parseLine(unsigned long* time, uint8_t* buf, size_t* size, const std::string& line) {
@@ -42,7 +38,7 @@ int play(const std::string& filename) {
   std::ifstream is;
   is.open(filename);
 
-  if (!is.is_open()) return die("Error opening file");
+  if (!is.is_open()) die("Error opening file");
 
   std::string line;
 
@@ -85,17 +81,17 @@ int rec(const std::string& filename, const std::string& hostname, const int port
   std::ofstream os;
   os.open(filename);
 
-  if (!os.is_open()) return die("Error opening file");
+  if (!os.is_open()) die("Error opening file");
 
   /* socket: create the socket */
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
-  if (sockfd < 0) return die("ERROR opening socket");
+  if (sockfd < 0) die("ERROR opening socket");
 
   /* gethostbyname: get the server's DNS entry */
   hostent* server = gethostbyname(hostname.c_str());
 
-  if (server == NULL) return die("No such host");
+  if (server == NULL) die("No such host");
 
   sockaddr_in serveraddr;
   memset(&serveraddr, 0, sizeof(serveraddr));
@@ -105,7 +101,7 @@ int rec(const std::string& filename, const std::string& hostname, const int port
   serveraddr.sin_port = htons(port);
 
   /* connect: create a connection with the server */
-  if (connect(sockfd, (sockaddr*)&serveraddr, sizeof(serveraddr)) < 0) return die("ERROR connecting");
+  if (connect(sockfd, (sockaddr*)&serveraddr, sizeof(serveraddr)) < 0) die("ERROR connecting");
 
   uint8_t buf[BUFSIZE];
 
@@ -113,7 +109,7 @@ int rec(const std::string& filename, const std::string& hostname, const int port
 
   while (true) {
     int n = read(sockfd, buf, BUFSIZE);
-    if (n < 0) return die("ERROR reading from socket");
+    if (n < 0) die("ERROR reading from socket");
 
     auto now = std::chrono::steady_clock::now();
 
@@ -131,7 +127,7 @@ int rec(const std::string& filename, const std::string& hostname, const int port
 
 int main(const int argc, const char** argv) {
   if (argc < 2) {
-    return die("Missing argument");
+    die("Missing argument");
   }
 
   std::string mode{argv[1]};
@@ -141,5 +137,5 @@ int main(const int argc, const char** argv) {
 
   if (mode == "play") return play(filename);
 
-  return die("Invalid command");
+  die("Invalid command");
 }
