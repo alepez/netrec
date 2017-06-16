@@ -1,4 +1,5 @@
 #include <chrono>
+#include <fstream>
 #include <iostream>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -41,15 +42,20 @@ void printTime(std::ostream& os, unsigned long t) {
 int rec(const std::string& filename, const std::string& hostname, const int port) {
   std::cerr << "Recording " << filename << std::endl;
 
+  std::ofstream os;
+  os.open(filename);
+
+  if (!os.is_open()) return die("Error opening file");
+
   /* socket: create the socket */
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
-  if (sockfd < 0) die("ERROR opening socket");
+  if (sockfd < 0) return die("ERROR opening socket");
 
   /* gethostbyname: get the server's DNS entry */
   hostent* server = gethostbyname(hostname.c_str());
 
-  if (server == NULL) die("No such host");
+  if (server == NULL) return die("No such host");
 
   sockaddr_in serveraddr;
   memset(&serveraddr, 0, sizeof(serveraddr));
@@ -59,7 +65,7 @@ int rec(const std::string& filename, const std::string& hostname, const int port
   serveraddr.sin_port = htons(port);
 
   /* connect: create a connection with the server */
-  if (connect(sockfd, (sockaddr*)&serveraddr, sizeof(serveraddr)) < 0) die("ERROR connecting");
+  if (connect(sockfd, (sockaddr*)&serveraddr, sizeof(serveraddr)) < 0) return die("ERROR connecting");
 
   uint8_t buf[BUFSIZE];
 
@@ -67,16 +73,16 @@ int rec(const std::string& filename, const std::string& hostname, const int port
 
   while (true) {
     int n = read(sockfd, buf, BUFSIZE);
-    if (n < 0) die("ERROR reading from socket");
+    if (n < 0) return die("ERROR reading from socket");
 
     auto now = std::chrono::steady_clock::now();
 
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count();
 
-    printTime(std::cout, elapsed);
-    std::cout << " ";
-    printHex(std::cout, buf, n);
-    std::cout << std::endl;
+    printTime(os, elapsed);
+    os << " ";
+    printHex(os, buf, n);
+    os << std::endl;
   }
 
   close(sockfd);
