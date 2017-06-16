@@ -1,3 +1,4 @@
+#include <chrono>
 #include <iostream>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -35,6 +36,12 @@ std::string toHex(const uint8_t* buf, const size_t size) {
   return result;
 }
 
+std::string formatTime(unsigned long t) {
+  char str[1024];
+  sprintf(str, "%016lu", t);
+  return std::string{str};
+}
+
 int rec(const std::string& filename, const std::string& hostname, const int port) {
   std::cerr << "Recording " << filename << std::endl;
 
@@ -60,12 +67,16 @@ int rec(const std::string& filename, const std::string& hostname, const int port
 
   uint8_t buf[BUFSIZE];
 
+  auto start = std::chrono::steady_clock::now();
+
   while (true) {
     int n = read(sockfd, buf, BUFSIZE);
     if (n < 0) die("ERROR reading from socket");
 
-    std::cerr << "RX " << n << " bytes\n";
-    std::cerr << toHex(buf, n) << std::endl;
+    auto now = std::chrono::steady_clock::now();
+
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count();
+    std::cerr << formatTime(elapsed) << " " << toHex(buf, n) << std::endl;
   }
 
   close(sockfd);
